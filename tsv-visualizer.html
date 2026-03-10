@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSV Content Visualizer</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-bg: #eff6ff;
+            --accent: #0ea5e9;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --row-alt: #f8fafc;
+            --highlight: #fef08a;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            padding: 28px 32px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .header h1 {
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            position: relative;
+        }
+
+        .header h1 span {
+            font-weight: 400;
+            opacity: 0.85;
+            font-size: 0.95rem;
+            margin-left: 10px;
+        }
+
+        .header p {
+            opacity: 0.88;
+            font-size: 0.88rem;
+            margin-top: 4px;
+            position: relative;
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* ── Upload Area ── */
+        .upload-area {
+            background: var(--surface);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 48px 32px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: var(--primary-light);
+            background: var(--primary-bg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .upload-area.drag-over {
+            transform: scale(1.005);
+        }
+
+        .upload-icon {
+            font-size: 2.6rem;
+            margin-bottom: 12px;
+        }
+
+        .upload-area h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .upload-area p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+        }
+
+        .upload-area .formats {
+            display: inline-flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .upload-area .formats span {
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(37,99,235,0.15);
+        }
+
+        .upload-area input[type="file"] {
+            display: none;
+        }
+
+        /* ── Toolbar ── */
+        .toolbar {
+            display: none;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 18px;
+            background: var(--surface);
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .toolbar.visible {
+            display: flex;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        .file-info .file-name {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .file-info .file-badge {
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .toolbar-spacer {
+            flex: 1;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0 12px;
+            transition: border-color 0.2s;
+            min-width: 240px;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .search-box .search-icon {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-right: 6px;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            width: 100%;
+            outline: none;
+            color: var(--text);
+        }
+
+        .search-box .search-count {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            margin-left: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--bg);
+            border-color: var(--border-hover);
+            color: var(--text);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            border-color: var(--primary-dark);
+            color: #fff;
+        }
+
+        /* ── Stats Bar ── */
+        .stats-bar {
+            display: none;
+            gap: 16px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        .stats-bar.visible {
+            display: flex;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 20px;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 2px;
+        }
+
+        .stat-card .stat-detail {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ── Table ── */
+        .table-wrapper {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .table-wrapper.visible {
+            display: block;
+        }
+
+        .table-scroll {
+            overflow: auto;
+            max-height: 72vh;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        thead th {
+            background: linear-gradient(180deg, #f1f5f9 0%, #e8edf3 100%);
+            font-weight: 700;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text);
+            white-space: nowrap;
+            user-select: none;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 0.8rem;
+            letter-spacing: 0.2px;
+        }
+
+        thead th:hover {
+            background: linear-gradient(180deg, #e2e8f0 0%, #dde3ea 100%);
+        }
+
+        thead th .sort-arrow {
+            opacity: 0.3;
+            margin-left: 4px;
+            font-size: 0.7rem;
+        }
+
+        thead th.sorted .sort-arrow {
+            opacity: 1;
+            color: var(--primary);
+        }
+
+        thead th.row-num-header {
+            width: 52px;
+            text-align: center;
+            cursor: default;
+            color: var(--text-muted);
+        }
+
+        tbody tr {
+            transition: background 0.1s;
+        }
+
+        tbody tr:nth-child(even) {
+            background: var(--row-alt);
+        }
+
+        tbody tr:hover {
+            background: var(--primary-bg);
+        }
+
+        tbody td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            max-width: 420px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text);
+        }
+
+        tbody td.row-num {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+            width: 52px;
+            background: rgba(0,0,0,0.015);
+            border-right: 1px solid var(--border);
+        }
+
+        tbody td.expanded {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        tbody td mark {
+            background: var(--highlight);
+            color: var(--text);
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+
+        /* ── Raw View ── */
+        .raw-view {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .raw-view.visible {
+            display: block;
+        }
+
+        .raw-view pre {
+            padding: 20px 24px;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', 'Monaco', monospace;
+            font-size: 0.82rem;
+            line-height: 1.65;
+            overflow: auto;
+            max-height: 72vh;
+            color: var(--text);
+            tab-size: 4;
+            -moz-tab-size: 4;
+        }
+
+        .raw-view pre .line-number {
+            display: inline-block;
+            width: 44px;
+            text-align: right;
+            margin-right: 16px;
+            color: var(--text-muted);
+            user-select: none;
+            font-size: 0.75rem;
+        }
+
+        .raw-view pre .tab-char {
+            color: var(--primary-light);
+            opacity: 0.5;
+        }
+
+        /* ── View Toggle ── */
+        .view-toggle {
+            display: inline-flex;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        .view-toggle button {
+            padding: 7px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border: none;
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-toggle button:not(:last-child) {
+            border-right: 1px solid var(--border);
+        }
+
+        .view-toggle button.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .view-toggle button:hover:not(.active) {
+            background: var(--bg);
+        }
+
+        /* ── Empty / Error States ── */
+        .message-box {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .message-box .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .message-box.error .icon {
+            color: var(--error);
+        }
+
+        /* ── Footer Info ── */
+        .footer-info {
+            display: none;
+            text-align: center;
+            padding: 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer-info.visible {
+            display: block;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { padding: 20px 16px; }
+            .header h1 { font-size: 1.25rem; }
+            .header h1 span { display: block; margin-left: 0; margin-top: 2px; }
+            .toolbar { padding: 12px; }
+            .search-box { min-width: 180px; }
+            .upload-area { padding: 32px 16px; }
+            .stat-card { min-width: 120px; padding: 12px 14px; }
+            .stat-card .stat-value { font-size: 1.15rem; }
+            tbody td { padding: 8px 10px; max-width: 200px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>📑 TSV Content Visualizer <span>Tab-delimited file viewer</span></h1>
+        <p>Upload .tsv or .txt files and view tab-separated content in a clean, searchable table</p>
+    </div>
+
+    <div class="container">
+
+        <!-- Upload Area -->
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📂</div>
+            <h2>Drop your file here or click to browse</h2>
+            <p>Supports tab-delimited text files</p>
+            <div class="formats">
+                <span>.tsv</span>
+                <span>.txt</span>
+            </div>
+            <input type="file" id="fileInput" accept=".tsv,.txt,.tab,.text">
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar" id="toolbar">
+            <div class="file-info">
+                <span class="file-badge" id="fileBadge">TSV</span>
+                <span class="file-name" id="fileName">—</span>
+                <span id="fileSize">—</span>
+            </div>
+            <div class="toolbar-spacer"></div>
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="Search all columns…">
+                <span class="search-count" id="searchCount"></span>
+            </div>
+            <div class="view-toggle" id="viewToggle">
+                <button class="active" data-view="table">📋 Table</button>
+                <button data-view="raw">📄 Raw</button>
+            </div>
+            <button class="btn" id="toggleWrap" title="Toggle cell text wrapping">↔ Wrap</button>
+            <button class="btn btn-primary" id="exportBtn">💾 Export</button>
+            <button class="btn" id="resetBtn">✕ Reset</button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-card">
+                <div class="stat-label">Rows</div>
+                <div class="stat-value" id="statRows">—</div>
+                <div class="stat-detail" id="statRowsDetail">data rows</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Columns</div>
+                <div class="stat-value" id="statCols">—</div>
+                <div class="stat-detail" id="statColsDetail">detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">File Size</div>
+                <div class="stat-value" id="statSize">—</div>
+                <div class="stat-detail" id="statSizeDetail">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Header</div>
+                <div class="stat-value" id="statHeader">—</div>
+                <div class="stat-detail" id="statHeaderDetail">first row</div>
+            </div>
+        </div>
+
+        <!-- Table View -->
+        <div class="table-wrapper" id="tableWrapper">
+            <div class="table-scroll" id="tableScroll">
+                <table id="dataTable">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Raw View -->
+        <div class="raw-view" id="rawView">
+            <pre id="rawContent"></pre>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-info" id="footerInfo">
+            Showing <strong id="visibleRows">0</strong> of <strong id="totalRows">0</strong> rows · Tab-delimited parsing · Client-side processing
+        </div>
+
+    </div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── State ──
+    let rawText = '';
+    let headers = [];
+    let rows = [];
+    let sortCol = -1;
+    let sortAsc = true;
+    let wrapCells = false;
+    let currentView = 'table';
+
+    // ── DOM refs ──
+    const $ = id => document.getElementById(id);
+    const uploadArea   = $('uploadArea');
+    const fileInput    = $('fileInput');
+    const toolbar      = $('toolbar');
+    const statsBar     = $('statsBar');
+    const tableWrapper = $('tableWrapper');
+    const rawView      = $('rawView');
+    const searchInput  = $('searchInput');
+    const searchCount  = $('searchCount');
+    const tableHead    = $('tableHead');
+    const tableBody    = $('tableBody');
+    const footerInfo   = $('footerInfo');
+
+    // ── Upload handlers ──
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+
+    uploadArea.addEventListener('dragover', e => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+    uploadArea.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+
+    // ── File processing ──
+    function handleFile(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const validExts = ['tsv', 'txt', 'tab', 'text'];
+        if (!validExts.includes(ext)) {
+            alert('Please upload a .tsv or .txt file.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = e => {
+            rawText = e.target.result;
+            parseContent(rawText, file);
+        };
+        reader.readAsText(file);
+    }
+
+    function parseContent(text, file) {
+        // Normalize line endings
+        const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const lines = normalized.split('\n').filter(l => l.trim() !== '');
+
+        if (lines.length === 0) {
+            alert('The file appears to be empty.');
+            return;
+        }
+
+        // Detect if file is tab-delimited (check first few lines for tabs)
+        const sampleLines = lines.slice(0, Math.min(5, lines.length));
+        const tabCount = sampleLines.reduce((sum, l) => sum + (l.match(/\t/g) || []).length, 0);
+
+        if (tabCount === 0) {
+            alert('No tab characters detected. This tool is designed for tab-delimited files.\n\nIf your file uses a different delimiter, try the CSV Content Visualizer instead.');
+            return;
+        }
+
+        // Parse header (first line)
+        headers = lines[0].split('\t').map(h => h.trim());
+
+        // Parse data rows
+        rows = [];
+        for (let i = 1; i < lines.length; i++) {
+            const cells = lines[i].split('\t');
+            // Pad or trim to match header count
+            while (cells.length < headers.length) cells.push('');
+            rows.push(cells.slice(0, Math.max(headers.length, cells.length)));
+        }
+
+        // Update UI
+        showUI(file);
+        renderTable();
+        renderStats(file);
+        renderRaw(normalized);
+    }
+
+    // ── Show UI ──
+    function showUI(file) {
+        uploadArea.style.display = 'none';
+        toolbar.classList.add('visible');
+        statsBar.classList.add('visible');
+        tableWrapper.classList.add('visible');
+        footerInfo.classList.add('visible');
+
+        const ext = file.name.split('.').pop().toUpperCase();
+        $('fileBadge').textContent = ext;
+        $('fileName').textContent = file.name;
+        $('fileSize').textContent = formatSize(file.size);
+    }
+
+    // ── Render table ──
+    function renderTable(filter) {
+        // Header
+        let headHtml = '<tr><th class="row-num-header">#</th>';
+        headers.forEach((h, i) => {
+            const sorted = sortCol === i;
+            const arrow = sorted ? (sortAsc ? '▲' : '▼') : '▲';
+            headHtml += `<th class="${sorted ? 'sorted' : ''}" data-col="${i}">${escHtml(h || `Col ${i+1}`)} <span class="sort-arrow">${arrow}</span></th>`;
+        });
+        headHtml += '</tr>';
+        tableHead.innerHTML = headHtml;
+
+        // Attach sort handlers
+        tableHead.querySelectorAll('th[data-col]').forEach(th => {
+            th.addEventListener('click', () => {
+                const col = parseInt(th.dataset.col);
+                if (sortCol === col) { sortAsc = !sortAsc; }
+                else { sortCol = col; sortAsc = true; }
+                renderTable(searchInput.value);
+            });
+        });
+
+        // Filter rows
+        let displayRows = rows.map((r, i) => ({ cells: r, origIndex: i }));
+        if (filter && filter.trim()) {
+            const q = filter.toLowerCase();
+            displayRows = displayRows.filter(r => r.cells.some(c => c.toLowerCase().includes(q)));
+        }
+
+        // Sort
+        if (sortCol >= 0) {
+            displayRows.sort((a, b) => {
+                let va = a.cells[sortCol] || '';
+                let vb = b.cells[sortCol] || '';
+                // Try numeric
+                const na = parseFloat(va), nb = parseFloat(vb);
+                if (!isNaN(na) && !isNaN(nb)) {
+                    return sortAsc ? na - nb : nb - na;
+                }
+                va = va.toLowerCase(); vb = vb.toLowerCase();
+                if (va < vb) return sortAsc ? -1 : 1;
+                if (va > vb) return sortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        // Body
+        const wrapClass = wrapCells ? ' expanded' : '';
+        let bodyHtml = '';
+        displayRows.forEach((r, idx) => {
+            bodyHtml += `<tr><td class="row-num">${r.origIndex + 1}</td>`;
+            r.cells.forEach(c => {
+                let display = escHtml(c);
+                if (filter && filter.trim()) {
+                    display = highlightMatch(display, filter);
+                }
+                bodyHtml += `<td class="${wrapClass}">${display}</td>`;
+            });
+            bodyHtml += '</tr>';
+        });
+        tableBody.innerHTML = bodyHtml;
+
+        // Update counts
+        $('visibleRows').textContent = displayRows.length;
+        $('totalRows').textContent = rows.length;
+
+        if (filter && filter.trim()) {
+            searchCount.textContent = `${displayRows.length} match${displayRows.length !== 1 ? 'es' : ''}`;
+        } else {
+            searchCount.textContent = '';
+        }
+    }
+
+    // ── Render raw view ──
+    function renderRaw(text) {
+        const lines = text.split('\n');
+        let html = '';
+        lines.forEach((line, i) => {
+            const num = `<span class="line-number">${i + 1}</span>`;
+            const content = escHtml(line).replace(/\t/g, '<span class="tab-char">→\t</span>');
+            html += num + content + '\n';
+        });
+        $('rawContent').innerHTML = html;
+    }
+
+    // ── Render stats ──
+    function renderStats(file) {
+        $('statRows').textContent = rows.length.toLocaleString();
+        $('statRowsDetail').textContent = rows.length === 1 ? 'data row' : 'data rows';
+
+        $('statCols').textContent = headers.length;
+        $('statColsDetail').textContent = 'columns detected';
+
+        const sizeObj = formatSizeObj(file.size);
+        $('statSize').textContent = sizeObj.value;
+        $('statSizeDetail').textContent = sizeObj.unit;
+
+        const hasHeader = headers.some(h => h && !/^\d+$/.test(h.trim()));
+        $('statHeader').textContent = hasHeader ? 'Yes' : 'Likely No';
+        $('statHeaderDetail').textContent = hasHeader ? 'named columns' : 'numeric-only';
+    }
+
+    // ── Search ──
+    searchInput.addEventListener('input', () => {
+        renderTable(searchInput.value);
+    });
+
+    // ── View toggle ──
+    $('viewToggle').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-view]');
+        if (!btn) return;
+        currentView = btn.dataset.view;
+        $('viewToggle').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        tableWrapper.classList.toggle('visible', currentView === 'table');
+        rawView.classList.toggle('visible', currentView === 'raw');
+    });
+
+    // ── Wrap toggle ──
+    $('toggleWrap').addEventListener('click', () => {
+        wrapCells = !wrapCells;
+        $('toggleWrap').style.background = wrapCells ? 'var(--primary-bg)' : '';
+        $('toggleWrap').style.color = wrapCells ? 'var(--primary)' : '';
+        renderTable(searchInput.value);
+    });
+
+    // ── Export ──
+    $('exportBtn').addEventListener('click', () => {
+        // Export visible rows as TSV
+        const filter = searchInput.value;
+        let exportRows = rows;
+        if (filter && filter.trim()) {
+            const q = filter.toLowerCase();
+            exportRows = rows.filter(r => r.some(c => c.toLowerCase().includes(q)));
+        }
+
+        let tsv = headers.join('\t') + '\n';
+        exportRows.forEach(r => { tsv += r.join('\t') + '\n'; });
+
+        const blob = new Blob([tsv], { type: 'text/tab-separated-values;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const baseName = $('fileName').textContent.replace(/\.[^.]+$/, '');
+        a.download = filter ? `${baseName}_filtered.tsv` : `${baseName}_export.tsv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    // ── Reset ──
+    $('resetBtn').addEventListener('click', () => {
+        rawText = '';
+        headers = [];
+        rows = [];
+        sortCol = -1;
+        sortAsc = true;
+        wrapCells = false;
+        currentView = 'table';
+        searchInput.value = '';
+        searchCount.textContent = '';
+        tableHead.innerHTML = '';
+        tableBody.innerHTML = '';
+        $('rawContent').innerHTML = '';
+        $('toggleWrap').style.background = '';
+        $('toggleWrap').style.color = '';
+        $('viewToggle').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        $('viewToggle').querySelector('[data-view="table"]').classList.add('active');
+
+        uploadArea.style.display = '';
+        toolbar.classList.remove('visible');
+        statsBar.classList.remove('visible');
+        tableWrapper.classList.remove('visible');
+        tableWrapper.classList.add('visible'); // will be hidden by next line
+        tableWrapper.classList.remove('visible');
+        rawView.classList.remove('visible');
+        footerInfo.classList.remove('visible');
+        fileInput.value = '';
+    });
+
+    // ── Helpers ──
+    function escHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function highlightMatch(html, query) {
+        if (!query) return html;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return html.replace(regex, '<mark>$1</mark>');
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function formatSizeObj(bytes) {
+        if (bytes < 1024) return { value: bytes, unit: 'bytes' };
+        if (bytes < 1048576) return { value: (bytes / 1024).toFixed(1), unit: 'KB' };
+        return { value: (bytes / 1048576).toFixed(1), unit: 'MB' };
+    }
+
+})();
+</script>
+
+</body>
+</html>
