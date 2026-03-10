@@ -1,6 +1,6 @@
-# TSV Content Visualizer
+# TSV-TXT Content Visualizer
 
-A modern, web-based tool for visualizing tab-delimited files with an intuitive table interface. Stop wrestling with broken columns in text editors and Excel import wizards — just upload and view your TSV data instantly!
+A modern, web-based tool for visualizing tab-delimited files with an intuitive table interface. Stop wrestling with broken columns in text editors and Excel import wizards — just upload and view your TSV/TXT data instantly!
 
 ## 🌟 Features
 
@@ -83,6 +83,7 @@ Real-time search across all columns with match count, plus a statistics dashboar
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Attribution-NonCommercial 4.0 International License — see the [LICENSE](LICENSE) file for details.
 "# TSV-TXT_Visualizer" 
 "# TSV-TXT_Visualizer" 
+
