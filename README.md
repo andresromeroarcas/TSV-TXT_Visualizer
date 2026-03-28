@@ -16,7 +16,7 @@ A modern, web-based tool for visualizing tab-delimited files with an intuitive t
 
 ## 🚀 Live Demo
 
-**[Try it now!](https://andresromeroarcas.github.io/TSV-Visualizer/tsv-visualizer.html)**
+**[Try it now!](https://andresromeroarcas.github.io/TSV-TXT_Visualizer/tsv-visualizer.html)**
 
 ## 🎯 Use Cases
 
@@ -28,7 +28,7 @@ A modern, web-based tool for visualizing tab-delimited files with an intuitive t
 ## 💻 Getting Started
 
 ### Option 1: Use Online (Recommended)
-Simply visit the [live demo](https://andresromeroarcas.github.io/TSV-Visualizer/tsv-visualizer.html) and start using it immediately!
+Simply visit the [live demo](https://andresromeroarcas.github.io/TSV-TXT_Visualizer/tsv-visualizer.html) and start using it immediately!
 
 ### Option 2: Download and Run Locally
 1. Download the `tsv-visualizer.html` file
